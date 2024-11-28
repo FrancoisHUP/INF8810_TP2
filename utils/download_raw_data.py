@@ -45,3 +45,4 @@ download_file(items_url, items_file_gz)
 # Extract the files into the data/ folder
 extract_gz_file(reviews_file_gz, reviews_file)
 extract_gz_file(items_file_gz, items_file)
+
