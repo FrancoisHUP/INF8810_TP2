@@ -1,5 +1,6 @@
 .venv/
 data/*
+data_csv/*
 
 
 # Created by https://www.toptal.com/developers/gitignore/api/visualstudiocode,python,jupyternotebooks,macos,windows
