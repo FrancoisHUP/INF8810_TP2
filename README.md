@@ -34,6 +34,14 @@ INF8810_TP2/
 │   ├── aus_reviews.csv
 │   ├── games_names.csv
 │   ├── user_game.csv
+├── .env
+```
+
+Avec le fichier ```.env```
+```
+NEO4J_URI=bolt://localhost:7687
+NEO4J_USERNAME=your_username  # by default "neo4j"
+NEO4J_PASSWORD=your_password # by default "neo4j"
 ```
 
 ## 4. Importer les données dans Neo4j
