@@ -146,7 +146,7 @@ if __name__ == "__main__":
 
     try:
         # Load all data into Neo4j
-        importer.load_all_data(GAMES_FILE, USER_GAME_FILE, REVIEWS_FILE)
+        importer.import_all_data(GAMES_FILE, USER_GAME_FILE, REVIEWS_FILE)
 
         # Fetch and print sample data
         importer.fetch_sample_data()
