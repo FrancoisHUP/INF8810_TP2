@@ -4,7 +4,7 @@ import os
 from tqdm import tqdm
 from dotenv import load_dotenv
 
-class Neo4jLoader:
+class Neo4jimporter:
     def __init__(self, uri, user, password):
         self.driver = GraphDatabase.driver(uri, auth=(user, password))
         self.metrics = {
@@ -24,8 +24,8 @@ class Neo4jLoader:
             session.run("CREATE CONSTRAINT IF NOT EXISTS FOR (u:User) REQUIRE u.user_id IS UNIQUE;")
             session.run("CREATE CONSTRAINT IF NOT EXISTS FOR (g:Game) REQUIRE g.game_id IS UNIQUE;")
 
-    def load_games(self, file_path):
-        print("Loading games...")
+    def import_games(self, file_path):
+        print("importing games...")
         with self.driver.session() as session:
             with open(file_path, 'r', encoding='utf-8', errors='replace') as file:
                 csv_reader = csv.DictReader(file)
@@ -38,8 +38,8 @@ class Neo4jLoader:
                     """, game_id=row['game_id'], name=row['name'])
                     self.metrics["games_added"] += 1  # Assume games are added without skip logic
 
-    def load_users_and_playtime(self, file_path):
-        print("Loading users and playtime...")
+    def import_users_and_playtime(self, file_path):
+        print("importing users and playtime...")
         with self.driver.session() as session:
             with open(file_path, 'r', encoding='utf-8', errors='replace') as file:
                 csv_reader = csv.DictReader(file)
@@ -55,8 +55,8 @@ class Neo4jLoader:
                        playtime=row['playtime'], active=row['active'])
                     self.metrics["users_added"] += 1
 
-    def load_reviews(self, file_path):
-        print("Loading reviews...")
+    def import_reviews(self, file_path):
+        print("importing reviews...")
         with self.driver.session() as session:
             with open(file_path, 'r', encoding='utf-8', errors='replace') as file:
                 csv_reader = csv.DictReader(file)
@@ -74,7 +74,7 @@ class Neo4jLoader:
                        helpful=row['helpful'], recommend=row['recommend'], review=row['review'])
                     self.metrics["reviews_added"] += 1
                     
-    def load_all_data(self, games_path, user_game_path, reviews_path):
+    def import_all_data(self, games_path, user_game_path, reviews_path):
         print("\n=== File Summary ===")
         games_count = count_rows(games_path)
         users_count = count_rows(user_game_path)
@@ -85,9 +85,9 @@ class Neo4jLoader:
         print("=====================")
 
         self.create_constraints()
-        self.load_games(games_path)
-        self.load_users_and_playtime(user_game_path)
-        self.load_reviews(reviews_path)
+        self.import_games(games_path)
+        self.import_users_and_playtime(user_game_path)
+        self.import_reviews(reviews_path)
         self.print_metrics()
 
     def print_metrics(self):
@@ -139,25 +139,25 @@ if __name__ == "__main__":
     USER_GAME_FILE = "data_csv/user_game.csv"
     REVIEWS_FILE = "data_csv/aus_reviews.csv"
 
-    print("Starting data loading process...")
+    print("Starting data imporing process...")
 
-    # Initialize Neo4jLoader
-    loader = Neo4jLoader(DATABASE_URI, USERNAME, PASSWORD)
+    # Initialize Neo4jimporer
+    importer = Neo4jimporter(DATABASE_URI, USERNAME, PASSWORD)
 
     try:
         # Load all data into Neo4j
-        loader.load_all_data(GAMES_FILE, USER_GAME_FILE, REVIEWS_FILE)
+        importer.load_all_data(GAMES_FILE, USER_GAME_FILE, REVIEWS_FILE)
 
         # Fetch and print sample data
-        loader.fetch_sample_data()
+        importer.fetch_sample_data()
 
         # Print metrics
-        loader.print_metrics()
+        importer.print_metrics()
 
         print("Data successfully loaded into Neo4j!")
     except Exception as e:
         print(f"An error occurred: {e}")
     finally:
-        loader.close()
+        importer.close()
 
     
