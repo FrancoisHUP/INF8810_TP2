@@ -4,9 +4,11 @@ import shutil
 import os
 
 # URLs to download files
-aus_reviews_url = "https://drive.usercontent.google.com/download?id=1KJVwUXOAEb-6FB7RPI4PMT0OoExt5zx7&export=download&authuser=0&confirm=t&uuid=238b5b2a-1a32-4c2f-b8c7-132c7ae7244f&at=AENtkXaIE5VOQJdZUViOkGU89y0i:1732827472145"
-games_names_url = "https://drive.usercontent.google.com/download?id=1tXkhXo_JlbdMQyiyzbPEjCopICyccZfH&export=download&authuser=0&confirm=t&uuid=6832b865-7e9d-4c99-a8e0-4c848d20b2cf&at=AENtkXZmxqZZCuldoJyVAN1Y_0Tc:1732827494889"
-user_game_url = "https://drive.usercontent.google.com/download?id=1nIUzmc0zyJlkoZrpxPoSTOlj8OaoE-X4&export=download&authuser=0&confirm=t&uuid=b6cd4744-e14f-40dd-9988-979889aa60e5&at=AENtkXYRPaRJkFQasxqLjJQZ5vx-:1732827531068"
+users_games="https://drive.usercontent.google.com/download?id=1hRLeEYdTVhZrCnk21ZOdE-Lg6CPqUrfr&export=download&authuser=0&confirm=t&uuid=f0a8a4ff-8bd5-4b7d-b0d2-5dc93ef288d0&at=AENtkXYDy9IDqO9t0KxXi9hq51dG:1732900404333"
+games_data_bins="https://drive.usercontent.google.com/download?id=1F831wIF1-kfBotke1l6oA-FdbaIqDOo4&export=download&authuser=0&confirm=t&uuid=138f6b8c-b486-4653-8287-69673f107f65&at=AENtkXYzYTcbIo5cw6yHnEu4qTp4:1732900466945"
+aus_reviews="https://drive.usercontent.google.com/download?id=1IneVMe_-dYxfDZDtaH3rgQFV0wAwq1ow&export=download&authuser=0&confirm=t&uuid=3af45070-d53d-4250-ab9b-09e258f77ae6&at=AENtkXbK_QfWsfp98NUX1PpIHhf5:1732900505238"
+users_data="https://drive.usercontent.google.com/download?id=1LoaDJDZzugQt7kk7jnnj8-NKa6IjH45x&export=download&authuser=0&confirm=t&uuid=7e98bcf5-0c24-4945-a4fd-0241f925a1a2&at=AENtkXYwDPrP-AWJeZmwiInKlO2C:1732900542349"
+
 # Directory to store data
 data_folder = "data_csv"
 
@@ -14,9 +16,10 @@ data_folder = "data_csv"
 os.makedirs(data_folder, exist_ok=True)
 
 # Filenames for extracted files
+users_games_file = os.path.join(data_folder, "users_games.csv")
+games_data_bins_file = os.path.join(data_folder, "games_data_bins.csv")
 aus_reviews_file = os.path.join(data_folder, "aus_reviews.csv")
-games_names_file = os.path.join(data_folder, "games_names.csv")
-user_game_file = os.path.join(data_folder, "user_game.csv")
+users_data_file = os.path.join(data_folder, "users_data.csv")
 
 def download_file(url, output_path):
     print(f"Downloading {url}...")
@@ -29,6 +32,7 @@ def download_file(url, output_path):
         print(f"Failed to download {url}. Status code: {response.status_code}")
 
 # Download the files into the data/ folder
-download_file(aus_reviews_url, aus_reviews_file)
-download_file(games_names_url, games_names_file)
-download_file(user_game_url, user_game_file)
+download_file(users_games, users_games_file)
+download_file(games_data_bins, games_data_bins_file)
+download_file(aus_reviews, aus_reviews_file)
+download_file(users_data, users_data_file)
