@@ -1,17 +1,17 @@
-from dotenv import load_dotenv
-import os
 from neo4j import GraphDatabase
+from config import load_env  
 
 # Load environment variables from the .env file
-load_dotenv()
+load_env()
 
-# Retrieve variables
-uri = os.getenv("NEO4J_URI")
-username = os.getenv("NEO4J_USERNAME")
-password = os.getenv("NEO4J_PASSWORD")
+# Load environment variables
+env_config = load_env()
+DATABASE_URI = env_config["uri"]
+USERNAME = env_config["username"]
+PASSWORD = env_config["password"]
 
 # Connect to the database
-driver = GraphDatabase.driver(uri, auth=(username, password))
+driver = GraphDatabase.driver(DATABASE_URI, auth=(USERNAME, PASSWORD))
 
 def test_connection():
     with driver.session() as session:

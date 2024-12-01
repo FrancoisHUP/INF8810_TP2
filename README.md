@@ -22,7 +22,7 @@ Pour les données brutes (jeu de données original)
 $ python utils/download_raw_data.py
 ```
 
-Pour les données pré-traitées / données utilisées pour neo4j ([Google Drive](https://drive.google.com/drive/folders/11onNyuwrslBDdj1rIh6C6hPV_UAbWvye?usp=sharing)) : 
+Pour les données pré-traitées / données utilisées pour Neo4j ([Google Drive](https://drive.google.com/drive/folders/11onNyuwrslBDdj1rIh6C6hPV_UAbWvye?usp=sharing)) : 
 ```bash
 $ python utils/download_csv_data.py
 ```
@@ -32,8 +32,9 @@ Les données doivent être enregistrées dans le dossier "data_csv/"
 INF8810_TP2/
 ├── data_csv/
 │   ├── aus_reviews.csv
-│   ├── games_names.csv
-│   ├── user_game.csv
+│   ├── games_data_bins.csv
+│   ├── users_data.csv
+│   ├── users_games.csv
 ├── .env
 ```
 
@@ -103,4 +104,34 @@ Reviews added: 53533
 Data successfully loaded into Neo4j!
 ```
 
+## 5. Lancer le logiciel de recommendation 
 
+Lister des utilisateurs au hasard:
+```
+python main.py --list_users --limit 5
+```
+
+Obtenir les informations d'un utilisateur :
+```bash
+python main.py --user_info 76561197970982479
+```
+
+Filtrage collaboratif (Collaborative filtering recommendations):
+```bash
+python main.py --type collaborative --user_id 76561197970982479 --limit 5
+```
+
+Filtrage basé sur le contenu (Content-based recommendations):
+```bash
+python main.py --type content --user_id 76561197970982479 --limit 5
+```
+
+Hybride (Hybrid recommendations):
+```bash
+python main.py --type hybrid --user_id 76561197970982479 --limit 5
+```
+
+Recommandation avec les percentilles:
+```bash
+python main.py --type bins --user_id 76561197970982479 --bin_threshold 2 --limit 5
+```

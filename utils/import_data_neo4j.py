@@ -1,8 +1,7 @@
 from neo4j import GraphDatabase
 import csv
-import os 
 from tqdm import tqdm
-from dotenv import load_dotenv
+from config import load_env  
 
 class Neo4jimporter:
     def __init__(self, uri, user, password):
@@ -27,7 +26,7 @@ class Neo4jimporter:
     def load_games(self, file_path):
         print("Loading games...")
         with self.driver.session() as session:
-            with open(file_path, 'r', encoding='utf-8', errors='replace') as file:
+            with open(file_path, 'r', encoding='utf-8', errors='replace') as file: # file == "data_csv/games_data_bins.csv"
                 csv_reader = csv.DictReader(file)
                 total_games = count_rows(file_path)
                 for row in tqdm(csv_reader, total=total_games, desc="Games Progress"):
@@ -151,19 +150,12 @@ def count_rows(file_path):
     
 if __name__ == "__main__":
 
-    # Clear env variables 
-    os.environ.pop("NEO4J_URI", None)
-    os.environ.pop("NEO4J_USERNAME", None)
-    os.environ.pop("NEO4J_PASSWORD", None)
+    # Load environment variables
+    env_config = load_env()
+    DATABASE_URI = env_config["uri"]
+    USERNAME = env_config["username"]
+    PASSWORD = env_config["password"]
     
-    # Load environment variables from the .env file
-    load_dotenv()
-    
-    # Configuration for Neo4j connection
-    DATABASE_URI = os.getenv("NEO4J_URI")
-    USERNAME = os.getenv("NEO4J_USERNAME")
-    PASSWORD = os.getenv("NEO4J_PASSWORD")
-
     # Define paths to the CSV files
     GAMES_FILE =  "data_csv/games_data_bins.csv"
     USER_GAME_FILE = "data_csv/users_games.csv"
