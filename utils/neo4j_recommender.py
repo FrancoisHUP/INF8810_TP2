@@ -26,43 +26,6 @@ class RecommenderSystem:
             results = session.run(query, user_id=user_id, top_n=top_n)
             return [{"game_id": record["game_id"], "name": record["name"], "popularity": record["popularity"]} for record in results]
     
-    def content_based_filtering(self, user_id, top_n=5):
-        """Recommend games based on content similarity."""
-        query = """
-        MATCH (target:User {user_id: $user_id})-[:PLAYS]->(g:Game)
-        WITH g
-        MATCH (similar:Game)
-        WHERE similar.game_id <> g.game_id
-          AND ABS(similar.median_time_played - g.median_time_played) < 10
-          AND ABS(similar.player_count - g.player_count) < 100
-        RETURN similar.game_id AS game_id, similar.name AS name, COUNT(*) AS similarity_score
-        ORDER BY similarity_score DESC
-        LIMIT $top_n
-        """
-        with self.driver.session() as session:
-            results = session.run(query, user_id=user_id, top_n=top_n)
-            return [{"game_id": record["game_id"], "name": record["name"], "similarity_score": record["similarity_score"]} for record in results]
-    
-    def hybrid_recommendation(self, user_id, top_n=5):
-        """Combine collaborative and content-based filtering."""
-        query = """
-        MATCH (target:User {user_id: $user_id})-[:PLAYS]->(g:Game)<-[:PLAYS]-(similar:User)
-        WITH target, similar, COUNT(g) AS shared_games
-        ORDER BY shared_games DESC
-        LIMIT 10
-        MATCH (similar)-[:PLAYS]->(recommended:Game)
-        WHERE NOT (target)-[:PLAYS]->(recommended)
-        WITH target, recommended, COUNT(*) AS popularity
-        MATCH (target)-[:PLAYS]->(g:Game)
-        WHERE ABS(recommended.median_time_played - g.median_time_played) < 10
-        AND ABS(recommended.player_count - g.player_count) < 100
-        RETURN recommended.game_id AS game_id, recommended.name AS name, popularity
-        ORDER BY popularity DESC
-        LIMIT $top_n
-        """
-        with self.driver.session() as session:
-            results = session.run(query, user_id=user_id, top_n=top_n)
-            return [{"game_id": record["game_id"], "name": record["name"], "popularity": record["popularity"]} for record in results]
     
     def recommend_by_bins(self, user_id, top_n=5, bin_threshold=1):
         """Recommend games based on bin popularity."""
