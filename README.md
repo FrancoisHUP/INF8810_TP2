@@ -5,7 +5,7 @@
 $ pip install -r requirements.txt
 ```
 
-## 2. Installation neo4j
+## 2. Installation Neo4j
 
 Assurez-vous d'avoir une version du logiciel [Neo4j installée](https://neo4j.com/download/) et en cours d'exécution sur votre machine. Vous devrez changer le mot de passe et nom de l'utilisateur dans le fichier ```.env``` à la racine du dossier. 
 
@@ -131,7 +131,7 @@ Hybride (Hybrid recommendations):
 python main.py --type hybrid --user_id 76561197970982479 --limit 5
 ```
 
-Recommandation avec les percentilles:
+Recommandation avec les percentilles (TODO):
 ```bash
 python main.py --type bins --user_id 76561197970982479 --bin_threshold 2 --limit 5
 ```
