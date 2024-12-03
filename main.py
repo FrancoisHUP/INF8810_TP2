@@ -134,7 +134,8 @@ def run():
 
             elif rec_type == "bins":
                 print("\nRecommendations Using Bins:")
-                print(json.dumps(recommender.recommend_by_bins(user_id, bin_threshold=args.bin_threshold, top_n=args.limit), indent=4))
+                # To be rework !
+                # print(json.dumps(recommender.recommend_by_bins(user_id, bin_threshold=args.bin_threshold, top_n=args.limit), indent=4))
 
             else:
                 print(f"Unknown recommendation type: {rec_type}")

@@ -25,25 +25,61 @@ class RecommenderSystem:
         with self.driver.session() as session:
             results = session.run(query, user_id=user_id, top_n=top_n)
             return [{"game_id": record["game_id"], "name": record["name"], "popularity": record["popularity"]} for record in results]
-    
-    
-    def recommend_by_bins(self, user_id, top_n=5, bin_threshold=1):
-        """Recommend games based on bin popularity."""
+        
+    def content_based_filtering(self, user_id, top_n=5):
+        """Recommend games based on aggregated user preferences."""
         query = """
         MATCH (target:User {user_id: $user_id})-[:PLAYS]->(g:Game)
-        WITH target, g
-        MATCH (recommended:Game)
-        WHERE recommended.game_id <> g.game_id
-        AND recommended.max_bin_1 >= $bin_threshold
-        AND NOT (target)-[:PLAYS]->(recommended)
-        RETURN DISTINCT recommended.game_id AS game_id, recommended.name AS name, recommended.max_bin_1 AS bin_score
-        ORDER BY bin_score DESC
+        WITH target, avg(g.median_time_played) AS user_avg_time, avg(g.player_count) AS user_avg_players
+        MATCH (similar:Game)
+        WHERE NOT (target)-[:PLAYS]->(similar)
+        AND ABS(similar.median_time_played - user_avg_time) < 10
+        AND ABS(similar.player_count - user_avg_players) < 100
+        RETURN similar.game_id AS game_id, similar.name AS name,
+            ABS(similar.median_time_played - user_avg_time) AS time_diff,
+            ABS(similar.player_count - user_avg_players) AS player_diff
+        ORDER BY time_diff, player_diff
         LIMIT $top_n
         """
         with self.driver.session() as session:
-            results = session.run(query, user_id=user_id, top_n=top_n, bin_threshold=bin_threshold)
-            return [{"game_id": record["game_id"], "name": record["name"], "bin_score": record["bin_score"]} for record in results]
-        
+            results = session.run(query, user_id=user_id, top_n=top_n)
+            return [{"game_id": record["game_id"], "name": record["name"],
+                    "time_diff": record["time_diff"], "player_diff": record["player_diff"]} for record in results]
+
+    
+    def hybrid_recommendation(self, user_id, top_n=5):
+        """Combine collaborative and content-based filtering with aggregated user preferences."""
+        query = """
+        MATCH (target:User {user_id: $user_id})-[:PLAYS]->(g:Game)
+        WITH target, avg(g.median_time_played) AS user_avg_time, avg(g.player_count) AS user_avg_players
+        MATCH (target)-[:PLAYS]->(g:Game)<-[:PLAYS]-(similar:User)
+        WITH target, user_avg_time, user_avg_players, similar, COUNT(g) AS shared_games
+        ORDER BY shared_games DESC
+        LIMIT 10
+        MATCH (similar)-[:PLAYS]->(recommended:Game)
+        WHERE NOT (target)-[:PLAYS]->(recommended)
+        AND ABS(recommended.median_time_played - user_avg_time) < 10
+        AND ABS(recommended.player_count - user_avg_players) < 100
+        RETURN recommended.game_id AS game_id, recommended.name AS name, 
+            COUNT(*) AS popularity, 
+            ABS(recommended.median_time_played - user_avg_time) AS time_diff, 
+            ABS(recommended.player_count - user_avg_players) AS player_diff
+        ORDER BY popularity DESC, time_diff ASC, player_diff ASC
+        LIMIT $top_n
+        """
+        with self.driver.session() as session:
+            results = session.run(query, user_id=user_id, top_n=top_n)
+            return [
+                {
+                    "game_id": record["game_id"],
+                    "name": record["name"],
+                    "popularity": record["popularity"],
+                    "time_diff": record["time_diff"],
+                    "player_diff": record["player_diff"]
+                }
+                for record in results
+            ]
+    
     def list_users(self, limit=5):
         """List random users."""
         query = """
