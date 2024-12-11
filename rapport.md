@@ -80,7 +80,7 @@ $ python utils/import_data_neo4j.py
 ```
 
 #### Métriques
-Nous définissons des métriques qui seront utiles pour notre usage: `games_added`, `users_added`, `relationships_added` et `reviews_added`. Il est important de noter que les requêtes qui suivront dans les prochaines sections n'inclueront pas les métriques et se trouvent à la fin de celles-ci dans leurs fonction respectives. Voir [import_data_neo4j.py](import_data_neo4j.py) pour plus de précisions.
+Nous définissons des métriques qui seront utiles pour notre usage: `games_added`, `users_added`, `relationships_added` et `reviews_added`. Il est important de noter que les requêtes qui suivront dans les prochaines sections n'inclueront pas les métriques et se trouvent à la fin de celles-ci dans leurs fonction respectives. Voir [./utils/import_data_neo4j.py](./utils/import_data_neo4j.py) pour plus de précisions.
 
 #### Chargement des jeux
 La fonction `load_games` permet de charger les jeux à partir de `GAMES_FILE` et la requête est la suivante: 
@@ -132,3 +132,100 @@ MERGE (u)-[r:REVIEWS {funny: $funny, posted: $posted,
                         last_edited: $last_edited, helpful: $helpful, 
                         recommend: $recommend, review: $review}]->(g)
 ```
+
+## Partie 3 : Recommandation
+Le fichier [./utils/neo4j_recommender.py](./utils/neo4j_recommender.py) contient tout le code de nos recommendations.
+### Quelle recommandation proposez-vous?
+Nous proposons trois recommendations: 
+
+#### Recommendation des jeux basés sur le filtrage collaboratif
+Voici notre requête:
+
+```
+    MATCH (target:User {user_id: $user_id})-[:PLAYS]->(g:Game)<-[:PLAYS]-(similar:User)
+    WITH target, similar, COUNT(g) AS shared_games
+    ORDER BY shared_games DESC
+    LIMIT 10
+    MATCH (similar)-[:PLAYS]->(recommended:Game)
+    WHERE NOT (target)-[:PLAYS]->(recommended)
+    RETURN recommended.game_id AS game_id, recommended.name AS name, COUNT(*) AS popularity
+    ORDER BY popularity DESC, recommended.name
+    LIMIT $top_n
+```
+La requête suit ces étapes :
+* Correspondre à l'utilisateur cible et trouver les jeux auxquels il a joué.
+* Identifier les utilisateurs similaires ayant joué aux mêmes jeux et compter les jeux partagés.
+* Trier les utilisateurs similaires par nombre de jeux partagés.
+* Limiter le nombre d'utilisateurs similaires (pour des raisons de performance).
+* Trouver les jeux joués par les utilisateurs similaires.
+* Exclure les jeux auxquels l'utilisateur cible a déjà joué.
+* Retourner les jeux recommandés avec leur popularité et leurs noms.
+* La popularité est calculée comme le nombre d'utilisateurs similaires ayant joué au jeu recommandé.
+* Trier par popularité puis par ordre alphabétique.
+* Limiter le nombre de recommandations.
+
+#### Recommendation des jeux basés sur les habitudes de jeu de l'utilisateur
+Voici notre requête:
+```
+MATCH (target:User {user_id: $user_id})-[:PLAYS]->(g:Game)
+WITH target, avg(g.median_time_played) AS user_avg_time, avg(g.player_count) AS user_avg_players
+MATCH (similar:Game)
+WHERE NOT (target)-[:PLAYS]->(similar)
+AND ABS(similar.median_time_played - user_avg_time) < 10
+AND ABS(similar.player_count - user_avg_players) < 100
+RETURN similar.game_id AS game_id, similar.name AS name,
+    ABS(similar.median_time_played - user_avg_time) AS time_diff,
+    ABS(similar.player_count - user_avg_players) AS player_diff
+ORDER BY time_diff, player_diff
+LIMIT $top_n
+```
+
+* Trouver l'utilisateur cible.
+* Rechercher les jeux auxquels cet utilisateur a joué.
+* Calculer la moyenne du temps médian de jeu (``user_avg_time``) et le nombre moyen de joueurs (``user_avg_players``) pour les jeux joués par l'utilisateur cible.
+* Trouver les jeux similaires auxquels l'utilisateur cible n'a pas encore joué.
+* Filtrer les jeux similaires pour s'assurer que :
+    * La différence entre le temps médian de jeu du jeu similaire et la moyenne du temps de jeu de l'utilisateur cible est inférieure à 10.
+    * La différence entre le nombre de joueurs du jeu similaire et la moyenne des joueurs de l'utilisateur cible est inférieure à 100.
+* Retourner les recommandations de jeux similaires
+* Trier les jeux similaires par différence de temps de jeu en ordre croissant, puis par différence de nombre de joueurs en ordre croissant.
+* Limiter le nombre de recommandations retournées à une valeur donnée (``$top_n``).
+
+#### Recommendation hybride
+Il s'agit d'un mélange entre les deux solutions précédentes. Cette approche permet de trouver les jeux auxquels des utilisateurs ayant les mêmes intérêts jouent PUIS de filtrer ces résultats pour augmenter la pertinence. Voici notre requête: 
+```
+MATCH (target:User {user_id: $user_id})-[:PLAYS]->(g:Game)
+WITH target, avg(g.median_time_played) AS user_avg_time, avg(g.player_count) AS user_avg_players
+MATCH (target)-[:PLAYS]->(g:Game)<-[:PLAYS]-(similar:User)
+WITH target, user_avg_time, user_avg_players, similar, COUNT(g) AS shared_games
+ORDER BY shared_games DESC
+LIMIT 10
+MATCH (similar)-[:PLAYS]->(recommended:Game)
+WHERE NOT (target)-[:PLAYS]->(recommended)
+AND ABS(recommended.median_time_played - user_avg_time) < 10
+AND ABS(recommended.player_count - user_avg_players) < 100
+RETURN recommended.game_id AS game_id, recommended.name AS name, 
+    COUNT(*) AS popularity, 
+    ABS(recommended.median_time_played - user_avg_time) AS time_diff, 
+    ABS(recommended.player_count - user_avg_players) AS player_diff
+ORDER BY popularity DESC, time_diff ASC, player_diff ASC
+LIMIT $top_n
+```
+* Trouver l'utilisateur cible.
+* Rechercher les jeux auxquels cet utilisateur a joué.
+* Calculer la moyenne du temps médian de jeu ``user_avg_time`` et le nombre moyen de joueurs ``user_avg_players`` pour les jeux joués par l'utilisateur cible.
+* Identification des utilisateurs similaires :
+* Trouver les utilisateurs similaires qui ont joué aux mêmes jeux que l'utilisateur cible.
+* Compter le nombre de jeux partagés avec ces utilisateurs similaires (``shared_games``).
+* Trier les utilisateurs similaires par le nombre de jeux partagés, en ordre décroissant.
+* Limiter la liste aux 10 utilisateurs similaires les plus proches (pour des raisons de performance).
+* Trouver les jeux joués par les utilisateurs similaires qui ne sont pas encore joués par l'utilisateur cible.
+* Filtrer les jeux recommandés pour s'assurer que :
+
+    * La différence entre le temps médian de jeu du jeu recommandé et la moyenne du temps de jeu de l'utilisateur cible est inférieure à 10.
+
+    * La différence entre le nombre de joueurs du jeu recommandé et la moyenne des joueurs de l'utilisateur cible est inférieure à 100.
+* Retourner les jeux recommandés.
+* Trier les jeux recommandés par popularité en ordre décroissant, puis par différence de temps de jeu en ordre croissant, et enfin par différence de nombre de joueurs en ordre croissant.
+
+* Limiter le nombre de recommandations retournées à une valeur donnée (``$top_n``).
