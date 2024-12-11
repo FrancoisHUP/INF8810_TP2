@@ -10,7 +10,21 @@ class RecommenderSystem:
         self.driver.close()
     
     def collaborative_filtering(self, user_id, top_n=5):
-        """Recommend games based on collaborative filtering."""
+        """
+        Recommend games based on collaborative filtering.
+
+        The query follows these steps:
+        1. Match the target user and find games they have played.
+        2. Identify similar users who have played the same games and count shared games.
+        3. Sort similar users by the number of shared games.
+        4. Limit the number of similar users (for performance).
+        5. Find games played by similar users.
+        6. Exclude games the target user already played.
+        7. Return recommended games along with their popularity and names.
+            - Popularity is calculated as the count of similar users who have played the recommended game.
+        8. Sort by popularity and then alphabetically.
+        9. Limit the number of recommendations.
+        """
         query = """
         MATCH (target:User {user_id: $user_id})-[:PLAYS]->(g:Game)<-[:PLAYS]-(similar:User)
         WITH target, similar, COUNT(g) AS shared_games
@@ -80,6 +94,10 @@ class RecommenderSystem:
                 for record in results
             ]
     
+    def recommend_by_bins(self, user_id, top_n=5):
+        """TODO"""
+        raise NotImplementedError("The 'recommend_by_bins' function is not implemented yet!")
+
     def list_users(self, limit=5):
         """List random users."""
         query = """
@@ -93,7 +111,11 @@ class RecommenderSystem:
             return [{"user_id": record["user_id"], "items_count": record.get("items_count")} for record in results]
 
     def get_user_info(self, user_id):
-        """Fetch detailed information about a specific user."""
+        """
+        Retrieve detailed information about a user and the games they played.
+        Matches the user by ID, their played games, and any reviews they've written.
+        Returns user stats and game details, ordered by playtime from most to least.  
+        """
         query = """
         MATCH (u:User {user_id: $user_id})-[p:PLAYS]->(g:Game)
         OPTIONAL MATCH (u)-[r:REVIEWS]->(g)

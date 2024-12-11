@@ -19,11 +19,22 @@ class Neo4jimporter:
         self.driver.close()
     
     def create_constraints(self):
+        """Ensure uniqueness of nodes by creating constraints on User and Game nodes."""
         with self.driver.session() as session:
             session.run("CREATE CONSTRAINT IF NOT EXISTS FOR (u:User) REQUIRE u.user_id IS UNIQUE;")
             session.run("CREATE CONSTRAINT IF NOT EXISTS FOR (g:Game) REQUIRE g.game_id IS UNIQUE;")
 
     def load_games(self, file_path):
+        """
+        Load game nodes from a CSV file. Each node will include attributes:
+          - name: Name of the game.
+          - time_played: Total hours played by all players.
+          - player_count: Total number of players who played the game.
+          - median_time_played: Median hours played by users.
+          - max_bin_x: Hour bins indicating 20th percentiles.
+        
+        If a game node already exists (matched by game_id), the node is not recreated.
+        """
         print("Loading games...")
         with self.driver.session() as session:
             with open(file_path, 'r', encoding='utf-8', errors='replace') as file: # file == "data_csv/games_data_bins.csv"
@@ -49,6 +60,15 @@ class Neo4jimporter:
                     self.metrics["games_added"] += 1
 
     def load_users(self, file_path):
+        """
+        Load user nodes from a CSV file. Each node will include attributes:
+          - items_count: Number of items owned by the user.
+          - played_games: Number of games played by the user.
+          - total_playtime: Total playtime across all games.
+          - most_played_game_id: ID of the game the user played the most.
+
+        If a user node already exists (matched by user_id), the node is not recreated.
+        """
         print("Loading users...")
         with self.driver.session() as session:
             with open(file_path, 'r', encoding='utf-8', errors='replace') as file:
@@ -67,6 +87,14 @@ class Neo4jimporter:
                     self.metrics["users_added"] += 1
 
     def load_user_game_relationships(self, file_path):
+        """
+        Load relationships between users and games from a CSV file.
+        Each relationship will include attributes:
+          - playtime: Time spent by the user playing the game.
+          - active: Indicates if the game is actively played.
+        
+        If a relationship already exists, it is not recreated.
+        """
         print("Loading user-game relationships...")
         with self.driver.session() as session:
             with open(file_path, 'r', encoding='utf-8', errors='replace') as file:
@@ -84,6 +112,18 @@ class Neo4jimporter:
                     self.metrics["relationships_added"] += 1
 
     def load_reviews(self, file_path):
+        """
+        Load reviews from a CSV file, establishing relationships between users and games.
+        Each review relationship will include attributes:
+          - funny: Indicates how funny other users find this review.
+          - posted: Timestamp of when the review was posted.
+          - last_edited: Timestamp of the last edit.
+          - helpful: Indicates how helpful other users find this review.
+          - recommend: Indicates whether the player recommends this game to others.
+          - review: Text content of the review.
+        
+        If a review relationship already exists, it is not recreated.
+        """
         print("Loading reviews...")
         with self.driver.session() as session:
             with open(file_path, 'r', encoding='utf-8', errors='replace') as file:
@@ -102,6 +142,10 @@ class Neo4jimporter:
                     self.metrics["reviews_added"] += 1
     
     def import_all_data(self, games_path, users_path, users_games_path, reviews_path):
+        """
+        Import all data into Neo4j by processing the provided CSV files:
+          - Load games, users, user-game relationships, and reviews.
+        """
         print("\n=== File Summary ===")
         print(f"Games file: {games_path}, Rows: {count_rows(games_path)}")
         print(f"Users file: {users_path}, Rows: {count_rows(users_path)}")
@@ -116,6 +160,7 @@ class Neo4jimporter:
         self.load_reviews(reviews_path)
 
     def print_metrics(self):
+        """Display a summary of the data imported into Neo4j."""
         print("\n=== Metrics Report ===")
         print(f"Games added: {self.metrics['games_added']}")
         print(f"Users added: {self.metrics['users_added']}")
@@ -124,6 +169,7 @@ class Neo4jimporter:
         print("======================")
 
     def fetch_sample_data(self):
+        """Retrieve and display 5 sample data from the Neo4j database"""
         with self.driver.session() as session:
             print("\n=== Sample Games ===")
             games = session.run("MATCH (g:Game) RETURN g.game_id AS game_id, g.name AS name LIMIT 5")
