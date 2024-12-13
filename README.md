@@ -1,5 +1,7 @@
 # INF8810_TP2
 
+Veuillez consulter notre [rapport](./rapport.md) pour les réponses aux questions de l'énoncé. Ce document détaille les étapes à suivre pour mettre en place l'environnement, télécharger les données, les importer et lancer notre système de recommendation sur Neo4J.
+
 ## 1. Installez les bibliothèques Python
 ```bash
 $ pip install -r requirements.txt
