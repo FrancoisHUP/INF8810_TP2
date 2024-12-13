@@ -1,9 +1,19 @@
 ## Partie 1 : Données 
 
+**Question: Quel est l'origine des données (lien, source)?**
+Les données que nous avons choisi d'utiliser sont celles des ensembles de données "[Version 1: Review Data](https://cseweb.ucsd.edu/~jmcauley/datasets.html#steam_data)" (données de revues de jeux) et "[Version 1: User and Item Data](https://cseweb.ucsd.edu/~jmcauley/datasets.html#steam_data)" (données des jeux de Steam). Les revues et les données de jeux sont d'origine d'Australie.
+Un plus grand ensemble de données de revue de jeux existe (version 2), mais cet ensemble de donnée n'a pas d'appréciation pour les revues (positive ou négative). Nous aurions dû prétraiter les revues avec une [analyse de sentiment](https://www.kaggle.com/code/tea713/steam-reviews-sentimental-analysis). Par contre, plusieurs revues peuvent être ambiguës et donnent peu d'indice sur la recommendation du jeu. Par exemple, des revues comme :
+<pre>
+잼꾸르잼
+</pre>
+<pre>
+#DEEP
+</pre>
+<pre>
+____?Sexy?Sexy ___?Sexy?Sexy?R ___?...
+</pre>
+sont difficiles à classer. Par souci de simplicité, nous avons décidé d'utilisé que les données provenant d'Australie.  
 
-
-### Quelle est l'origine des données?
-Les données que nous avons choisi d'utiliser sont celles des [notes attribuées par les utilisateurs de Steam pour différents jeux](https://cseweb.ucsd.edu/~jmcauley/datasets.html#steam_data) ainsi que leur revue textuelle. Ces [revues](https://datarepo.eng.ucsd.edu/mcauley_group/data/steam/australian_user_reviews.json.gz) et ces [données de jeux](https://datarepo.eng.ucsd.edu/mcauley_group/data/steam/australian_users_items.json.gz) sont d'origine d'Australie.
 
 ### Quel est le contexte du jeu de données?
 Les données sont celles des revues Steam comme celle-ci:![steam review](Sample_review.png "Steam Review")
@@ -26,6 +36,10 @@ Les pondérations sont les suivantes:
  
  ```
 
+
+<!--
+Peut-être on pourrait mettre un petit resumé du prétraitement du fichier ? 
+-->
 
 ### Prétraitement des données
 Le prétraitement ainsi que la vérification des données se trouve dans [pretraitement_items.ipynb](pretraitement_items.ipynb). Pour collecter les informations que nous voulions, il a fallu nettoyer les sources de données et nous avons débuté par importer les fichiers JSON comme dictionnaires python puis les convertir en fichiers CSV pour utiliser avec Neo4J. Nos fichiers qui seront créés à partir des données de ``australian_users_items.json`` sont: *Games*, *User Lib* et *User Data*. Il est à noter que les détails de l'implémentation se retrouve dans [pretraitement_items.ipynb](pretraitement_items.ipynb).
@@ -135,10 +149,54 @@ MERGE (u)-[r:REVIEWS {funny: $funny, posted: $posted,
 
 ## Partie 3 : Recommandation
 Le fichier [./utils/neo4j_recommender.py](./utils/neo4j_recommender.py) contient tout le code de nos recommendations.
+
+Pour cette section, nous allons utiliser un utilisateur pour illustrer les recherches dans Néo4j. L'utilisateur ```76561197970982479``` sera notre cobaye pour les expérimentations. Pour obtenir plus d'informations sur les habitudes de cet utilisateur, nous pouvons exécuter la commande suivante :
+
+```bash
+python main.py --user_info 76561197970982479
+```
+
+<pre>
+Fetching Information for User ID: 76561197970982479
+User Information:
+- User ID: 76561197970982479
+- Items Count: 277
+- Played Games: 198
+- Total Playtime: 3335 hours
+
+Games Played (sorted by playtime):
+  [1] Counter-Strike: Global Offensive (ID: 730)
+      Playtime: 393h | Player Count: 43279 | Max Bins: [13, 54, 201, 530, 6272] | Player Bin: 4
+      Review: No review
+  [2] Rising Storm/Red Orchestra 2 Multiplayer (ID: 35450)
+      Playtime: 237h | Player Count: 6138 | Max Bins: [0, 1, 4, 17, 1874] | Player Bin: 5
+      Review: No review
+  [3] Sid Meier's Civilization V (ID: 8930)
+      Playtime: 173h | Player Count: 14279 | Max Bins: [4, 20, 50, 120, 7091] | Player Bin: 5
+      Review: No review
+  [4] Killing Floor (ID: 1250)
+      Playtime: 167h | Player Count: 13286 | Max Bins: [2, 7, 16, 41, 6115] | Player Bin: 5
+      Review: Simple yet with great replayability. In my opinion does "zombie" hordes and team work better than left 4 dead plus has a global leveling system. Alot of down to earth "zombie" splattering fun for the whole family. Amazed this sort of FPS is so rare.     
+  [5] Killing Floor 2 (ID: 232090)
+      Playtime: 109h | Player Count: 4095 | Max Bins: [3, 8, 17, 37, 1309] | Player Bin: 5
+      Review: No review
+  [...]    
+  [167] Evolve Stage 2 (ID: 273350)
+      Playtime: 1h | Player Count: 6373 | Max Bins: [0, 1, 3, 10, 1788] | Player Bin: 2
+      Review: No review
+
+--- End of User Information ---
+</pre>
+
+> **_NOTE:_** La différence entre le ```Items Count: 277``` et le dernier jeu identifié à la position ```[167]``` est due au prétraitement. Nous avons retiré les jeux ayant moins d'une heure de jeu et moins de 100 utilisateurs. Nous supposons que les 110 jeux manquants ont été supprimés lors du prétraitement.  
+ 
 ### Quelle recommandation proposez-vous?
 Nous proposons trois recommendations: 
 
-#### Recommendation des jeux basés sur le filtrage collaboratif
+#### Recommendation des jeux basés sur le filtrage collaboratif.
+
+Le but de cette requête est de trouver des utilisateurs similaires en termes de jeux, puis de recommander des jeux qu'ils ont appréciés. La requête prend un user_id en entrée et retourne une liste de jeux ainsi que la métrique de similarité.
+
 Voici notre requête:
 
 ```
@@ -164,7 +222,44 @@ La requête suit ces étapes :
 * Trier par popularité puis par ordre alphabétique.
 * Limiter le nombre de recommandations.
 
+Voici l'execusion pour l'utilisateur ```76561197970982479``` : 
+```bash
+python main.py --type collaborative --user_id 76561197970982479 --limit 5
+```
+<pre>
+Collaborative Filtering Recommendations:
+[
+    {
+        "game_id": "211420",
+        "name": "Dark Souls: Prepare to Die Edition",
+        "popularity": 10
+    },
+    {
+        "game_id": "219150",
+        "name": "Hotline Miami",
+        "popularity": 10
+    },
+    {
+        "game_id": "204100",
+        "name": "Max Payne 3",
+        "popularity": 10
+    },
+    {
+        "game_id": "233130",
+        "name": "Shadow Warrior",
+        "popularity": 10
+    },
+    {
+        "game_id": "202170",
+        "name": "Sleeping Dogs\u2122",
+        "popularity": 10
+    }
+]
+</pre> 
 #### Recommendation des jeux basés sur les habitudes de jeu de l'utilisateur
+
+Le but de cette requête est d'identifier des jeux similaires à ceux déjà joués par l'utilisateur cible, en analysant ses habitudes de jeu avec des métriques telles que le temps médian de jeu et le nombre moyen de joueurs. En prenant un user_id en entrée, la requête calcule les moyennes de ces métriques pour l'utilisateur, filtre les jeux non joués en fonction de leur proximité avec ces moyennes, et retourne une liste de recommandations triées selon leur pertinence.
+
 Voici notre requête:
 ```
 MATCH (target:User {user_id: $user_id})-[:PLAYS]->(g:Game)
@@ -190,6 +285,40 @@ LIMIT $top_n
 * Retourner les recommandations de jeux similaires
 * Trier les jeux similaires par différence de temps de jeu en ordre croissant, puis par différence de nombre de joueurs en ordre croissant.
 * Limiter le nombre de recommandations retournées à une valeur donnée (``$top_n``).
+
+Voici l'execusion pour l'utilisateur ```76561197970982479``` : 
+```bash
+$ python main.py --type content --user_id 76561197970982479 --limit 5
+```
+<pre>
+Content-Based Filtering Recommendations:
+[
+    {
+        "game_id": "239820",
+        "name": "Game Dev Tycoon",
+        "time_diff": 2.2395209580838316,
+        "player_diff": 93.95209580838127
+    },
+    {
+        "game_id": "239220",
+        "name": "The Mighty Quest For Epic Loot",
+        "time_diff": 5.239520958083832,
+        "player_diff": 18.047904191618727
+    },
+    {
+        "game_id": "236110",
+        "name": "Dungeon Defenders II",
+        "time_diff": 6.239520958083832,
+        "player_diff": 33.95209580838127
+    },
+    {
+        "game_id": "113020",
+        "name": "Monaco",
+        "time_diff": 7.239520958083832,
+        "player_diff": 91.04790419161873
+    }
+]
+</pre>
 
 #### Recommendation hybride
 Il s'agit d'un mélange entre les deux solutions précédentes. Cette approche permet de trouver les jeux auxquels des utilisateurs ayant les mêmes intérêts jouent PUIS de filtrer ces résultats pour augmenter la pertinence. Voici notre requête: 
@@ -229,3 +358,45 @@ LIMIT $top_n
 * Trier les jeux recommandés par popularité en ordre décroissant, puis par différence de temps de jeu en ordre croissant, et enfin par différence de nombre de joueurs en ordre croissant.
 
 * Limiter le nombre de recommandations retournées à une valeur donnée (``$top_n``).
+
+Voici l'execusion pour l'utilisateur ```76561197970982479``` : 
+```bash
+$ python main.py --type hybrid --user_id 76561197970982479 --limit 5
+```
+<pre>
+Hybrid Recommendations:
+[
+    {
+        "game_id": "239820",
+        "name": "Game Dev Tycoon",
+        "popularity": 9,
+        "time_diff": 2.2395209580838316,
+        "player_diff": 93.95209580838127
+    },
+    {
+        "game_id": "113020",
+        "name": "Monaco",
+        "popularity": 8,
+        "time_diff": 7.239520958083832,
+        "player_diff": 91.04790419161873
+    },
+    {
+        "game_id": "236110",
+        "name": "Dungeon Defenders II",
+        "popularity": 4,
+        "time_diff": 6.239520958083832,
+        "player_diff": 33.95209580838127
+    },
+    {
+        "game_id": "239220",
+        "name": "The Mighty Quest For Epic Loot",
+        "popularity": 3,
+        "time_diff": 5.239520958083832,
+        "player_diff": 18.047904191618727
+    }
+]
+</pre>
+
+<!-- 
+REFS CITATIONS ?!
+-->
