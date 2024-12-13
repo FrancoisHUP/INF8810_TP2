@@ -42,9 +42,7 @@ Les pondérations sont les suivantes:
  ```
 
 
-<!--
-Peut-être on pourrait mettre un petit resumé du prétraitement du fichier ? 
--->
+
 
 ### Prétraitement des données
 Le prétraitement ainsi que la vérification des données se trouve dans [pretraitement_items.ipynb](pretraitement_items.ipynb). Pour collecter les informations que nous voulions, il a fallu nettoyer les sources de données et nous avons débuté par importer les fichiers JSON comme dictionnaires python puis les convertir en fichiers CSV pour utiliser avec Neo4J. Nos fichiers qui seront créés à partir des données de ``australian_users_items.json`` sont: *Games*, *User Lib* et *User Data*. Il est à noter que les détails de l'implémentation se retrouve dans [pretraitement_items.ipynb](pretraitement_items.ipynb).
@@ -401,7 +399,3 @@ Hybrid Recommendations:
     }
 ]
 </pre>
-
-<!-- 
-REFS CITATIONS ?!
--->
