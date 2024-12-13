@@ -1,8 +1,13 @@
+## Projet réalisé par:
+* Guillaume Carignan CARG29099504
+* Etienne Comtois COME17029800
+* François Huppé-Marcoux HUPF10049509
+
 ## Partie 1 : Données 
 
-**Question: Quel est l'origine des données (lien, source)?**
-Les données que nous avons choisi d'utiliser sont celles des ensembles de données "[Version 1: Review Data](https://cseweb.ucsd.edu/~jmcauley/datasets.html#steam_data)" (données de revues de jeux) et "[Version 1: User and Item Data](https://cseweb.ucsd.edu/~jmcauley/datasets.html#steam_data)" (données des jeux de Steam). Les revues et les données de jeux sont d'origine d'Australie.
-Un plus grand ensemble de données de revue de jeux existe (version 2), mais cet ensemble de donnée n'a pas d'appréciation pour les revues (positive ou négative). Nous aurions dû prétraiter les revues avec une [analyse de sentiment](https://www.kaggle.com/code/tea713/steam-reviews-sentimental-analysis). Par contre, plusieurs revues peuvent être ambiguës et donnent peu d'indice sur la recommendation du jeu. Par exemple, des revues comme :
+### Question: Quel est l'origine des données (lien, source)?
+Les données que nous avons choisies d'utiliser sont celles des ensembles de données "[Version 1: Review Data](https://cseweb.ucsd.edu/~jmcauley/datasets.html#steam_data)" (données de revues de jeux) et "[Version 1: User and Item Data](https://cseweb.ucsd.edu/~jmcauley/datasets.html#steam_data)" (données des jeux de Steam). Les revues et les données de jeux sont d'origine d'Australie.
+Un plus grand ensemble de données de revue de jeux existe (version 2), mais cet ensemble de donnéees n'a pas d'appréciation pour les revues (positive ou négative). Nous aurions pu prétraiter les revues avec une [analyse de sentiment](https://www.kaggle.com/code/tea713/steam-reviews-sentimental-analysis). Par contre, plusieurs revues peuvent être ambiguës et donnent peu d'indices sur la recommendation du jeu. Par exemple, des revues comme :
 <pre>
 잼꾸르잼
 </pre>
@@ -12,7 +17,7 @@ Un plus grand ensemble de données de revue de jeux existe (version 2), mais cet
 <pre>
 ____?Sexy?Sexy ___?Sexy?Sexy?R ___?...
 </pre>
-sont difficiles à classer. Par souci de simplicité, nous avons décidé d'utilisé que les données provenant d'Australie.  
+sont difficiles à classer. Par soucis de simplicité, nous avons décidé d'utiliser que les données provenant d'Australie.  
 
 
 ### Quel est le contexte du jeu de données?
